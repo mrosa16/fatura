@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: gd_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: gd_billing
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: .
+    container_name: gd_backend
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: mysecretpassword
+      DB_NAME: gd_billing
+      PORT: 3000
+  
+  strapi:
+    build: ./strapi
+    container_name: gd_strapi
+    ports:
+      - "1337:1337"
+    depends_on:
+      - postgres
+
+  n8n:
+    image: n8nio/n8n
+    container_name: gd_n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n:/home/node/.n8n
+    environment:
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  strapi_data:
